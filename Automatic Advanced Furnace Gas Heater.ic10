@@ -1,0 +1,73 @@
+#Automatic Advanced Furnace Gas Heater by CowsAreEvil
+alias hottank d0
+alias hottopup d1
+alias coldtank d2
+alias coldtopup d3
+alias filtration d4
+alias furnacesensor d5
+
+define VALVE -1280984102
+define MIXER 2104106366
+define FURNACE 1947944864
+define MAXPRESSURE 20000
+define COLDTEMP 400
+define HOTTEMP 2000
+
+start:
+#ignite if ready
+lb r0 FURNACE RatioOxygen Average
+sge r0 r0 0.05
+lb r1 FURNACE RatioVolatiles Average
+sge r1 r1 0.1
+and r0 r0 r1
+sb FURNACE Activate r0
+#check for cold topup
+l r0 coldtank Pressure
+slt r0 r0 MAXPRESSURE
+l r1 coldtank Temperature
+slt r1 r1 COLDTEMP
+and r0 r0 r1
+s coldtopup On r0
+#check cold temp
+l r0 coldtank Temperature
+sgt r0 r0 COLDTEMP
+sb VALVE On r0
+#check for hot top up
+l r0 furnacesensor Temperature
+sub r0 r0 100
+sge r0 r0 HOTTEMP
+l r1 furnacesensor Pressure
+slt r1 r1 MAXPRESSURE
+and r0 r0 r1
+s hottopup On r0
+# turn on extractor
+l r0 furnacesensor Temperature
+sge r0 r0 HOTTEMP
+l r1 hottank Pressure
+sle r1 r1 MAXPRESSURE
+and r0 r0 r1
+ls r1 filtration 0 Quantity
+snez r1 r1
+and r0 r0 r1
+ls r1 filtration 1 Quantity
+snez r1 r1
+and r0 r0 r1
+s filtration On r0
+# set mixer
+l r0 furnacesensor RatioOxygen
+l r1 furnacesensor RatioVolatiles
+div r0 r0 r1
+sub r0 0.5 r0
+mul r0 r0 33.33333
+add r0 33.33333 r0
+min r0 r0 100
+max r0 r0 0
+sb MIXER Setting r0
+#turn on mixer
+l r0 furnacesensor Pressure
+add r0 r0 2000
+sle r0 r0 MAXPRESSURE
+sb MIXER On r0
+
+yield
+j start
